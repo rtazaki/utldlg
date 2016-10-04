@@ -19,15 +19,21 @@ namespace utldlg
 		{
 		}
 		
-		public void TestCase1(string data)
+		public void TestCase1(string data, CancellationTokenSource tokenSource)
 		{
 			Thread.Sleep(500);
-			if (data == "2") {
-				throw new InvalidProgramException();
-			} else if (data == "3") {
-				throw new Exception();
-			} else if (data == "4") {
-				while (true);
+			while (true) {
+				if (data == "2") {
+					throw new InvalidOperationException();
+				} else if (data == "3") {
+					throw new Exception();
+				} else if (data == "4") {
+					tokenSource.Token.ThrowIfCancellationRequested();
+				} else if (data == "5") {
+					//暴走
+				} else {
+					break;
+				}
 			}
 		}
 	}

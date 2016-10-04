@@ -52,7 +52,8 @@ namespace utldlg
 		//日付を跨いだときに別ファイルになってもいいなら、都度作成すればよい。
 		private Log tracelog = new Log("TraceLog");
 		private Log notcomp = new Log("NotComp");
-				
+		
+		private CancellationTokenSource tokenSource;
 		//再帰関数
 		private async void RecursiveFunction()
 		{
@@ -72,24 +73,23 @@ namespace utldlg
 					break;
 				}
 				timer.Start();
-				var tokenSource = new CancellationTokenSource();
+				tokenSource = new CancellationTokenSource();
 				try {
 					tracelog.AppendAllText(filelist[i] + " begin");
 					await Task.Run(() => {
-						HeavyTestClass.Instance.TestCase1(filelist[i]);
+						HeavyTestClass.Instance.TestCase1(filelist[i], tokenSource);
 					}, tokenSource.Token);
 					comp.Add(filelist[i]);
 					tracelog.AppendAllText(filelist[i] + " finish");
 					Retry = 0;
 					i++;
-				} catch (InvalidProgramException e) {
+				} catch (InvalidOperationException e) {
 					tracelog.AppendAllText("couldn't retry case. skip." + "\r\n" + e.ToString());
 					Retry = 0;
 					i++;
 				} catch (Exception e) {
 					tracelog.AppendAllText("try retry case." + "\r\n" + e.ToString());
 					Retry++;
-					tokenSource.Cancel();
 				}
 				timer.Stop();
 			}
@@ -109,9 +109,8 @@ namespace utldlg
 		private void dispatcherTimer_Tick(object sender, EventArgs e)
 		{
 			(sender as DispatcherTimer).Stop();
+			tokenSource.Cancel();
 			tracelog.AppendAllText(filelist[i] + ": timeout. retry.");
-			Retry++;
-			RecursiveFunction();
 		}
 		
 		private SearchOption so;
